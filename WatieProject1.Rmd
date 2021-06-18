@@ -11,20 +11,102 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## R Markdown
 
+
+```{r}
+library(httr)
+library(readr)
+library(dplyr)
+library(jsonlite)
+library(tidyverse)
+library(DBI)
+library(RSQLite)
+library(devtools)
+library(bigrquery)
+```
+
 This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r cars}
-summary(cars)
+```{r Franchise, echo=FALSE}
+nhlAPI <- c("https://records.nhl.com/site/api","/franchise")
+
+franchise <- function(x){
+  fran <- paste0("https://records.nhl.com/site/api", "/franchise")
+  fran <- GET(fran)
+  fran
+  fran <- content(fran, as = "text")
+  fran <- fromJSON(fran, flatten = TRUE)
+  print(fran)
+}
+franchise
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r FranchiseTeamTotals, echo=FALSE}
+franTeamTot <- function(x){
+  TeamTot <- paste0("https://records.nhl.com/site/api", "/franchise-team-totals")
+  TeamTot <- GET(TeamTot)
+  TeamTot
+  TeamTot <- content(TeamTot, as = "text")
+  TeamTot <- fromJSON(TeamTot, flatten = TRUE)
+  TeamTot
+}
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
+
+```{r SeasonRecords, echo=FALSE}
+seasonRecords <- function(x){
+  SeasRec <- paste0("https://records.nhl.com/site/api", "/franchise-season-records")
+  SeasRec <- GET(SeasRec)
+  SeasRec
+  SeasRec <- content(SeasRec, as = "text")
+  SeasRec <- fromJSON(SeasRec, flatten = TRUE)
+  SeasRec
+}
+```
+
+
+
+
+```{r GoalieRecords, echo=FALSE}
+goalieRec <- function(x){
+  goalRec <- paste0("https://records.nhl.com/site/api", "/franchise-goalie-records")
+  goalRec <- GET(goalRec)
+  goalRec
+  goalRec <- content(goalRec, as = "text")
+  goalRec <- fromJSON(goalRec, flatten = TRUE)
+  goalRec
+}
+```
+
+
+
+```{r SkaterRecords, echo=FALSE}
+skateRec <- function(x){
+  skateRec <- paste0("https://records.nhl.com/site/api", "/franchise-skater-records")
+  skateRec <- GET(skateRec)
+  skateRec
+  skateRec <- content(skateRec, as = "text")
+  skateRec <- fromJSON(skateRec, flatten = TRUE)
+  skateRec
+}
+```
+
+
+```{r FranchiseDetails, echo=FALSE}
+FranDetails <- function(x){
+  FranDetails <- paste0("https://records.nhl.com/site/api", "/franchise-detail")
+  FranDetails <- GET(FranDetails)
+  FranDetails
+  FranDetails <- content(FranDetails, as = "text")
+  FranDetails <- fromJSON(FranDetails, flatten = TRUE)
+  FranDetails
+}
+```
+
+
+
