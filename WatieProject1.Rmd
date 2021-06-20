@@ -22,6 +22,7 @@ library(DBI)
 library(RSQLite)
 library(devtools)
 library(bigrquery)
+library(rvest)
 ```
 
 This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
@@ -29,29 +30,28 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r Franchise, echo=FALSE}
-nhlAPI <- c("https://records.nhl.com/site/api","/franchise")
-
-franchise <- function(x){
-  fran <- paste0("https://records.nhl.com/site/api", "/franchise")
-  fran <- GET(fran)
-  fran
-  fran <- content(fran, as = "text")
-  fran <- fromJSON(fran, flatten = TRUE)
-  print(fran)
+franchise <- function(id){
+  franUrl <- paste0("https://records.nhl.com/site/api", "/franchise")
+  getFran <- GET(franUrl)
+  getFran
+  franCont <- content(getFran, as = "text")
+  franJson <- fromJSON(franCont, flatten = TRUE)
+  franJson
 }
-franchise
+franchise(19171918)
 ```
 
 
 ```{r FranchiseTeamTotals, echo=FALSE}
-franTeamTot <- function(x){
-  TeamTot <- paste0("https://records.nhl.com/site/api", "/franchise-team-totals")
-  TeamTot <- GET(TeamTot)
-  TeamTot
-  TeamTot <- content(TeamTot, as = "text")
-  TeamTot <- fromJSON(TeamTot, flatten = TRUE)
-  TeamTot
+franTeamTot <- function(id){
+  TeamUrl <- paste0("https://records.nhl.com/site/api", "/franchise-team-totals")
+  getTeam <- GET(TeamUrl)
+  getTeam
+  TeamCont <- content(getTeam, as = "text")
+  TeamJson <- fromJSON(TeamCont, flatten = TRUE)
+  TeamJson
 }
+franTeamTot(activeFranchise)
 ```
 
 
@@ -59,54 +59,103 @@ franTeamTot <- function(x){
 
 
 ```{r SeasonRecords, echo=FALSE}
-seasonRecords <- function(x){
-  SeasRec <- paste0("https://records.nhl.com/site/api", "/franchise-season-records")
-  SeasRec <- GET(SeasRec)
-  SeasRec
-  SeasRec <- content(SeasRec, as = "text")
-  SeasRec <- fromJSON(SeasRec, flatten = TRUE)
-  SeasRec
+seasonRecords <- function(id){
+  SeasUrl <- paste0("https://records.nhl.com/site/api", "/franchise-season-records?cayenneExp=franchiseId")
+  GetSeas <- GET(SeasUrl)
+  GetSeas
+  SeasCont <- content(GetSeas, as = "text")
+  SeasJson <- fromJSON(SeasCont, flatten = TRUE)
+  SeasJson
 }
+seasonRecords(fewestGoalsAgainst)
 ```
 
 
 
 
 ```{r GoalieRecords, echo=FALSE}
-goalieRec <- function(x){
-  goalRec <- paste0("https://records.nhl.com/site/api", "/franchise-goalie-records")
-  goalRec <- GET(goalRec)
-  goalRec
-  goalRec <- content(goalRec, as = "text")
-  goalRec <- fromJSON(goalRec, flatten = TRUE)
-  goalRec
+goalieRec <- function(id){
+  getGoal <- paste0("https://records.nhl.com/site/api", "/franchise-goalie-records")
+  goalRec <- GET(getGoal)
+  getGoal
+  goalCont <- content(getGoal, as = "text")
+  goalJson <- fromJSON(goalCont, flatten = TRUE)
+  goalJson
 }
+goalieRec()
 ```
 
 
 
 ```{r SkaterRecords, echo=FALSE}
-skateRec <- function(x){
-  skateRec <- paste0("https://records.nhl.com/site/api", "/franchise-skater-records")
-  skateRec <- GET(skateRec)
-  skateRec
-  skateRec <- content(skateRec, as = "text")
-  skateRec <- fromJSON(skateRec, flatten = TRUE)
-  skateRec
+skateRec <- function(id){
+  skateUrl <- paste0("https://records.nhl.com/site/api", "/franchise-skater-records?cayenneExp=franchiseId")
+  getSkate <- GET(skateUrl)
+  getSkate
+  skateCont <- content(getSkate, as = "text")
+  skateJson <- fromJSON(skateCont, flatten = TRUE)
+  skateJson
 }
+skateRec(417)
 ```
 
 
 ```{r FranchiseDetails, echo=FALSE}
-FranDetails <- function(x){
-  FranDetails <- paste0("https://records.nhl.com/site/api", "/franchise-detail")
-  FranDetails <- GET(FranDetails)
-  FranDetails
-  FranDetails <- content(FranDetails, as = "text")
-  FranDetails <- fromJSON(FranDetails, flatten = TRUE)
-  FranDetails
+FranDetails <- function(id){
+  Fran_url <- paste0("https://records.nhl.com/site/api", "/franchise-detail?cayenneExp=mostRecentTeamId")
+  GetDetails <- GET(Fran_url)
+  GetDetails
+  ContentDetails <- content(GetDetails, as = "text")
+  JsonDetails <- fromJSON(ContentDetails, flatten = TRUE)
+  JsonDetails
 }
+FranDetails(captainHistory)
 ```
 
 
+```{r}
+Modifier <- function(x){
+  ModUrl <- paste0("https://statsapi.web.nhl.com/api/v1", "/teams?expand=team.stats")
+  GetMod <- GET(ModUrl)
+  GetMod
+  ModCont <- content(GetMod, as = "text")
+  ModJson <- fromJSON(ModCont, flatten = TRUE)
+  ModJson
+}
+```
+```{r}
+
+FranchiseDetails <- function(id){
+  base_url <- "https://records.nhl.com/site/api/franchise-detail?cayenneExp=mostRecentTeamId"
+  full_url <- paste0(base_url, "=", id)
+  get_franch <- GET(full_url)
+  get_franch
+  get_franch_text <- content(get_franch, as = "text", encoding = "UTF-8")
+  get_franch_text
+  get_franch_json <- fromJSON(get_franch_text, flatten = TRUE)
+  get_franch_json
+  detailList <- as_tibble(get_franch_json$data) %>% select(2:13) %>% rename(fullName = teamFullName, activeFranchise = active)
+  
+  
+  capHist <- read_html(detailList$captainHistory)
+  coaHist <- detailList[3]
+  gmHist <- detailList[7]
+  rNumSum <- deatailList[10]
+  
+  return(list(detailList,capHist))
+  
+  invisible()
+}
+FranchisDetails(6)
+```
+
+
+```{r}
+nhlEndpoints < function(id){
+  call(skateRec)
+  
+}
+mean
+nhlEndpoints(5)
+```
 
