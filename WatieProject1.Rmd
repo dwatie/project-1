@@ -37,7 +37,9 @@ franchise <- function(id){
   franCont <- content(getFran, as = "text")
   franJson <- fromJSON(franCont, flatten = TRUE)
   franJson
-}
+  franList <- as_tibble(franJson$data)
+  franList
+  }
 franchise(19171918)
 ```
 
@@ -50,7 +52,12 @@ franTeamTot <- function(id){
   TeamCont <- content(getTeam, as = "text")
   TeamJson <- fromJSON(TeamCont, flatten = TRUE)
   TeamJson
+  teamList <- as_tibble(TeamJson$data) %>% rename(name = teamName)
+  teamList
 }
+
+
+
 franTeamTot(activeFranchise)
 ```
 
@@ -66,6 +73,8 @@ seasonRecords <- function(id){
   SeasCont <- content(GetSeas, as = "text")
   SeasJson <- fromJSON(SeasCont, flatten = TRUE)
   SeasJson
+  Seaslist <- as_tibble(SeasJson$data)
+  Seaslist
 }
 seasonRecords(fewestGoalsAgainst)
 ```
@@ -81,6 +90,7 @@ goalieRec <- function(id){
   goalCont <- content(getGoal, as = "text")
   goalJson <- fromJSON(goalCont, flatten = TRUE)
   goalJson
+  
 }
 goalieRec()
 ```
@@ -95,7 +105,9 @@ skateRec <- function(id){
   skateCont <- content(getSkate, as = "text")
   skateJson <- fromJSON(skateCont, flatten = TRUE)
   skateJson
-}
+  skateList <- as_tibble(skateJson$data, nrow(10), ncol(30))
+  skateList
+  }
 skateRec(417)
 ```
 
@@ -118,44 +130,44 @@ Modifier <- function(x){
   ModUrl <- paste0("https://statsapi.web.nhl.com/api/v1", "/teams?expand=team.stats")
   GetMod <- GET(ModUrl)
   GetMod
-  ModCont <- content(GetMod, as = "text")
+  ModCont <- content(GetMod, as = "text", encoding = "UTF-8")
   ModJson <- fromJSON(ModCont, flatten = TRUE)
   ModJson
-}
-```
-```{r}
-
-FranchiseDetails <- function(id){
-  base_url <- "https://records.nhl.com/site/api/franchise-detail?cayenneExp=mostRecentTeamId"
-  full_url <- paste0(base_url, "=", id)
-  get_franch <- GET(full_url)
-  get_franch
-  get_franch_text <- content(get_franch, as = "text", encoding = "UTF-8")
-  get_franch_text
-  get_franch_json <- fromJSON(get_franch_text, flatten = TRUE)
-  get_franch_json
-  detailList <- as_tibble(get_franch_json$data) %>% select(2:13) %>% rename(fullName = teamFullName, activeFranchise = active)
-  
-  
-  capHist <- read_html(detailList$captainHistory)
-  coaHist <- detailList[3]
-  gmHist <- detailList[7]
-  rNumSum <- deatailList[10]
-  
-  return(list(detailList,capHist))
-  
-  invisible()
-}
-FranchisDetails(6)
+  ModList <- as_tibble(ModJson$teams)
+  ModList
+  }
 ```
 
 
+
 ```{r}
-nhlEndpoints < function(id){
-  call(skateRec)
+nhlEndpoints <- function(franchise, franTeamTot, seasonRecords, skateRec, FranDetails, Modifier){
+    if(franchise){ franchise(id)}
+  
+    if(franTeamTot){franTeamTot(id)}
+  
+    if(seasonRecords){seasonRecords(id)}
+    
+    if(skateRec){seasonRecords(id)}
+  
+    if(FranchisDetails){FranchisDetails(id)}
   
 }
-mean
 nhlEndpoints(5)
 ```
+
+
+
+```{r}
+statJoin <- left_join(teamList, List, na.rm = TRUE)
+statJoin
+statAvgs <- summarise(statJoin, avgGamesPlayed = mean(statjoin$gamesPlayed), avgGoalsFor = mean(statjoin$goalsFor), avgGoalsAgainst = mean(statjoin$goalsAgainst) )
+```
+
+
+
+```{r}
+
+```
+
 
