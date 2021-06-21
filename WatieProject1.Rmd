@@ -9,9 +9,9 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+### NHL API Vignette
 
-
+Here are the packages that used to throughout the Vignette to allow the program to properly run correctly and give the correct output.
 ```{r}
 library(httr)
 library(readr)
@@ -27,11 +27,11 @@ library(knitr)
 library(ggplot2)
 ```
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+## Accessing the NHL API
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+In order to connect R to the NHL API on the internet you have to create the URL and then call the API to R. the base URL for the NHL API is **https://records.nhl.com/site/api**. The base needs to be at the beginning of all the API's that you are calling to R. Next you the link for the endpoint that you are going to be accessing. For instance, to call the *franchise* endpoint from the API the link is **/franchise**. Once you have the link to the endpoint, you paste the base URL and the endpoint together to get the complete URL such as **https://records.nhl.com/site/api/franchise**. The you need to call the URL using the GET function. Using the *jsonlite* package, you can read the API in and convert it to a table. The following are examples of calling the NHL API.
 
-```{r Franchise, echo=FALSE}
+```{r Franchise, echo=TRUE}
 franchise <- function(id){
   franUrl <- paste0("https://records.nhl.com/site/api", "/franchise")
   getFran <- GET(franUrl)
@@ -46,7 +46,7 @@ franchise(19171918)
 ```
 
 
-```{r FranchiseTeamTotals, echo=FALSE}
+```{r FranchiseTeamTotals, echo=TRUE}
 franTeamTot <- function(id){
   TeamUrl <- paste0("https://records.nhl.com/site/api", "/franchise-team-totals")
   getTeam <- GET(TeamUrl)
@@ -67,7 +67,7 @@ franTeamTot(activeFranchise)
 
 
 
-```{r SeasonRecords, echo=FALSE}
+```{r SeasonRecords, echo=TRUE}
 seasonRecords <- function(id){
   SeasUrl <- paste0("https://records.nhl.com/site/api", "/franchise-season-records?cayenneExp=franchiseId")
   GetSeas <- GET(SeasUrl)
@@ -84,15 +84,16 @@ seasonRecords(fewestGoalsAgainst)
 
 
 
-```{r GoalieRecords, echo=FALSE}
+```{r GoalieRecords, echo=True}
 goalieRec <- function(id){
-  getGoal <- paste0("https://records.nhl.com/site/api", "/franchise-goalie-records")
+  getGoal <- paste0("https://records.nhl.com/site/api", "/franchise-goalie-records?cayenneExp=franchiseId=ID")
   goalRec <- GET(getGoal)
   getGoal
   goalCont <- content(getGoal, as = "text")
   goalJson <- fromJSON(goalCont, flatten = TRUE)
   goalJson
-  
+  goalList <- as_tibble(goalJson$data)
+  goalList
 }
 goalieRec()
 ```
@@ -115,7 +116,7 @@ skateList
 ```
 
 
-```{r FranchiseDetails, echo=FALSE}
+```{r FranchiseDetails, echo=TRUE}
 FranDetails <- function(id){
   Fran_url <- paste0("https://records.nhl.com/site/api", "/franchise-detail?cayenneExp=mostRecentTeamId")
   GetDetails <- GET(Fran_url)
@@ -130,7 +131,7 @@ FranDetails(captainHistory)
 ```
 
 
-```{r}
+```{r URL Modifier, echo=TRUE}
 Modifier <- function(x){
   ModUrl <- paste0("https://statsapi.web.nhl.com/api/v1", "/teams?expand=team.stats")
   GetMod <- GET(ModUrl)
@@ -143,7 +144,7 @@ Modifier <- function(x){
   }
 ```
 
-
+The wrapper function is used to be an easier way to call a previous created functions so that the user has an easier time using the functions. 
 
 ```{r}
 nhlEndpoints <- function(franchise, franTeamTot, seasonRecords, skateRec, FranDetails, Modifier){
@@ -161,25 +162,27 @@ nhlEndpoints <- function(franchise, franTeamTot, seasonRecords, skateRec, FranDe
 nhlEndpoints(5)
 ```
 
+## Creating Variables
+The first thing needed to create new variables, is converting the data frame into a tibble. Next, the new variables are created using the summarise function. These new variables calculate the mean using "gamesPlayed", "goals", and "assists" variables that were already present in the data frame. The new variables are "avgGamesPlayed", "avgGoals", and "avgAssists"
 
-
-```{r}
+```{r Skater Averages, echo=TRUE}
 skateList1 <- as_tibble(skateList)
 skateAvgs <- summarise(skateList1,avgGamesPlayed = mean(skateList1$gamesPlayed), avgGoals = mean(skateList1$goals), avgAssists = mean(skateList1$assists))
 skateAvgs
 ```
 
+The new variables "avgGames", "avgGoalsFor", and "avgGoalsAgainst" are created.
 
-
-```{r}
+```{r Team Averages, echo=TRUE}
 TeamList1 <- as_tibble(teamList)
 TeamList1
 TeamAvgs <- summarise(TeamList1, avgGames = mean(TeamList1$gamesPlayed), avgGoalsFor = mean(TeamList1$goalsFor), avgGoalsAgainst = mean(TeamList1$goalsAgainst))
 TeamAvgs
 ```
+## Contingency Tables
+Contingency tables show the relationship between categorical variables. In order to create a contingency table using a data frame, the function table() is used. The first thing needed to do is to convert the data frame into a tibble. The select() function lets you pic the variables that you want present in the tibble that you are creating. The starts_with() option, pulls all the variables from the data frame that starts with the word "team". The following demonstrates the basic two-way contingency table that the table() function creates. The kable() function prints the two-way table nice for the viewer. 
 
-
-```{r}
+```{r Active Teams, echo=TRUE}
 FranDets <- as_tibble(JsonDetails$data, ncol(10)) %>% select(active, starts_with("team"))
 FranDets
 ActTeams <- table(FranDets$active, FranDets$teamAbbrev)
@@ -187,45 +190,75 @@ ActTeams
 kable(ActTeams, caption = "Teams that are still active or not active", ncol(10))
 ```
 
+The following is example of a basic contingency table using the table() function.
 
-```{r}
+```{r Season Numbers, echo=TRUE}
 SeasonNums <- as_tibble(Seaslist) %>% select(franchiseId, franchiseName, mostWins, mostLosses, mostTies)
 SeasonNums
 kable(SeasonNums, nrow(10), caption = "Seasons with the most Wins, Losses, and Ties")
 ```
 
 
-```{r}
+```{r Team Totals, echo=TRUE}
 Teamtotals <- as_tibble(teamList) %>% select(activeFranchise, name,gamesPlayed, goalsFor, goalsAgainst, homeWins, roadWins, homeLosses, roadLosses) 
 Teamtotals
 kable(Teamtotals, nrow(10), caption = "Team totals by active and non active teams")
 ```
 
+## Quantitative Summary
+Quantitative summaries are summaries on subgroups of data that can be refined by grouping one or more variables. In order create the quantitative summary, like many of the rest of the functions, you have to convert it to a tibble first. Then it is necessary to use the group_by() function to designate your grouping variable. Then use the summarise() function create the new variables and the compute the summary statistics.
 
-
-```{r}
-ActiveTeams <- ggplot(FranDets, aes(active))
-ActiveTeams + geom_bar() + labs(x="Active/Inactive Teams", title = "Active teams and inactive teams in the NHL") + scale_x_discrete(labels = c("Inactive", "Active"))
+```{r Goal Summary, echo=TRUE}
+GoalSummary <- skateList1 %>% group_by(activePlayer) %>% summarise(avg = mean(goals), med = median(goals), stdev = sd(goals))
+GoalSummary
+kable(GoalSummary, caption = "The mean, median, and standard deviation for goals by active/inactive players")
 ```
 
+The following is an example grouping using two variables instead of one. This summary is grouped by the activePlayer variable and the positionCode variable.  
+
+```{r Summary Stat 2, echo=TRUE}
+GoalSummary2 <- skateList1 %>% group_by(activePlayer, positionCode) %>% summarise(avg = mean(goals), med = median(goals), stdev = sd(goals))
+GoalSummary2
+kable(GoalSummary2, caption = "The mean, median, and standard deviation for goals by active/inactive players and position")
+```
+## GGPLOTS
+
+In this section, the ggplot2 package is used to create bar plot, histograms, box plots, and scatter plots. You must have the ggplot2 package installed. When you using the ggplot() function you must input the data frame that is being used first, then use the aes(), aesthetics, function to represent the variables. In the following example,the geom_bar() function is used to create the bar plots and the histograms. The labs() function created the labels for the x-axis, y-axis (if needed), and the title for the graph. The scale_x_discreet() function can be used to create the labels for the bins on the bar plots and histograms.
+
+```{r Active Plots, echo=TRUE}
+ActiveTeams <- ggplot(FranDets, aes(active))
+ActiveTeams + geom_bar() + labs(x="Active/Inactive Teams", title = "Active teams and inactive teams in the NHL history") + scale_x_discrete(labels = c("Inactive", "Active"))
+```
+
+The histogram below utilizes the "fill" option in the geom_bar() to color code the goals made in one game grouped by position.
 
 ```{r}
 SkateData<- ggplot(data = skateList1, aes(as.factor(positionCode)))
 SkateData + geom_bar(aes(fill = as.factor(mostGoalsOneGame)), position = "dodge") + labs(x = "Position Code", title = "Histogram of the most goals made in one game by position")+ scale_fill_discrete(name = "Goals Made in One Game")
 ```
 
+The plot below demonstrates the geom_plot() function to create the scatter plot to explore the relationship between the variables "fewestGoalsAgainst" and "fewestLosses". The "jitter" in the position option is used for continuous data with many points at the same values.
 
-
-```{r}
+```{r Season Plot, echo=TRUE}
 SeasonPlot <- ggplot(Seaslist, aes(fewestGoalsAgainst))
 SeasonPlot + geom_point(aes(fewestGoalsAgainst, fewestLosses), position = "jitter") + labs(x = "Fewest Goals Against", y = " Fewest Losses", title = "Scatter Plot comparing the Fewest Losses and the Fewest Goals Made Against")
 
 ```
 
 
+```{r Wins Scatter, echo=TRUE}
+WinsScatter <- ggplot(teamList, aes(wins, goalsFor))
+WinsScatter + geom_point() + labs(x = "Total Wins", y = "Goals Scored for", title = "Scatter plot to observe relationship between wins and goals for")
+```
+
+
+The plot below demonstrate the geom_boxplot() function. It uses the variable "positionCode" for the x and the "mostPointsOneSeason" variable for the y-axis. The boxplots gives a five number summary analysis for the the data. 
 
 ```{r}
 ActivePos <- ggplot(skateList1, aes(as.factor(positionCode)))
 ActivePos + geom_boxplot(aes(positionCode, mostPointsOneSeason)) + labs(x = "PositionCode", y = "Most Points in One Seaon")
 ```
+
+
+
 
