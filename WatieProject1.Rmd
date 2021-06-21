@@ -23,6 +23,8 @@ library(RSQLite)
 library(devtools)
 library(bigrquery)
 library(rvest)
+library(knitr)
+library(ggplot2)
 ```
 
 This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
@@ -109,6 +111,7 @@ skateRec <- function(id){
   skateList
   }
 skateRec(417)
+skateList
 ```
 
 
@@ -120,7 +123,9 @@ FranDetails <- function(id){
   ContentDetails <- content(GetDetails, as = "text")
   JsonDetails <- fromJSON(ContentDetails, flatten = TRUE)
   JsonDetails
-}
+  DetailsList <- as_tibble(JsonDetails$data) 
+  DetailsList
+  }
 FranDetails(captainHistory)
 ```
 
@@ -159,15 +164,68 @@ nhlEndpoints(5)
 
 
 ```{r}
-statJoin <- left_join(teamList, List, na.rm = TRUE)
-statJoin
-statAvgs <- summarise(statJoin, avgGamesPlayed = mean(statjoin$gamesPlayed), avgGoalsFor = mean(statjoin$goalsFor), avgGoalsAgainst = mean(statjoin$goalsAgainst) )
+skateList1 <- as_tibble(skateList)
+skateAvgs <- summarise(skateList1,avgGamesPlayed = mean(skateList1$gamesPlayed), avgGoals = mean(skateList1$goals), avgAssists = mean(skateList1$assists))
+skateAvgs
 ```
 
 
 
 ```{r}
+TeamList1 <- as_tibble(teamList)
+TeamList1
+TeamAvgs <- summarise(TeamList1, avgGames = mean(TeamList1$gamesPlayed), avgGoalsFor = mean(TeamList1$goalsFor), avgGoalsAgainst = mean(TeamList1$goalsAgainst))
+TeamAvgs
+```
+
+
+```{r}
+FranDets <- as_tibble(JsonDetails$data, ncol(10)) %>% select(active, starts_with("team"))
+FranDets
+ActTeams <- table(FranDets$active, FranDets$teamAbbrev)
+ActTeams
+kable(ActTeams, caption = "Teams that are still active or not active", ncol(10))
+```
+
+
+```{r}
+SeasonNums <- as_tibble(Seaslist) %>% select(franchiseId, franchiseName, mostWins, mostLosses, mostTies)
+SeasonNums
+kable(SeasonNums, nrow(10), caption = "Seasons with the most Wins, Losses, and Ties")
+```
+
+
+```{r}
+Teamtotals <- as_tibble(teamList) %>% select(activeFranchise, name,gamesPlayed, goalsFor, goalsAgainst, homeWins, roadWins, homeLosses, roadLosses) 
+Teamtotals
+kable(Teamtotals, nrow(10), caption = "Team totals by active and non active teams")
+```
+
+
+
+```{r}
+ActiveTeams <- ggplot(FranDets, aes(active))
+ActiveTeams + geom_bar() + labs(x="Active/Inactive Teams", title = "Active teams and inactive teams in the NHL") + scale_x_discrete(labels = c("Inactive", "Active"))
+```
+
+
+```{r}
+SkateData<- ggplot(data = skateList1, aes(as.factor(positionCode)))
+SkateData + geom_bar(aes(fill = as.factor(mostGoalsOneGame)), position = "dodge") + labs(x = "Position Code", title = "Histogram of the most goals made in one game by position")+ scale_fill_discrete(name = "Goals Made in One Game")
+```
+
+
+
+```{r}
+SeasonPlot <- ggplot(Seaslist, aes(fewestGoalsAgainst))
+SeasonPlot + geom_point(aes(fewestGoalsAgainst, fewestLosses), position = "jitter") + labs(x = "Fewest Goals Against", y = " Fewest Losses", title = "Scatter Plot comparing the Fewest Losses and the Fewest Goals Made Against")
 
 ```
 
+
+
+```{r}
+ActivePos <- ggplot(skateList1, aes(as.factor(positionCode)))
+ActivePos + geom_boxplot(aes(positionCode, mostPointsOneSeason)) + labs(x = "PositionCode", y = "Most Points in One Seaon")
+```
 
