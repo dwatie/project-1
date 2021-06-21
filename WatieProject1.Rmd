@@ -81,26 +81,24 @@ seasonRecords <- function(id){
 seasonRecords(fewestGoalsAgainst)
 ```
 
-
-
-
-```{r GoalieRecords, echo=True}
-goalieRec <- function(id){
-  getGoal <- paste0("https://records.nhl.com/site/api", "/franchise-goalie-records?cayenneExp=franchiseId=ID")
-  goalRec <- GET(getGoal)
-  getGoal
-  goalCont <- content(getGoal, as = "text")
-  goalJson <- fromJSON(goalCont, flatten = TRUE)
-  goalJson
-  goalList <- as_tibble(goalJson$data)
-  goalList
-}
-goalieRec()
+```{r Goalie, echo=TRUE}
+goalieUrl <- paste0("https://records.nhl.com/site/api", "/franchise-goalie-records")
+  getGoalie <- GET(goalieUrl)
+  getGoalie
+  goalieCont <- content(getGoalie, as = "text")
+  goalieJson <- fromJSON(goalieCont, flatten = TRUE)
+  goalieJson
+  goalieList <- as_tibble(goalieJson$data)
+  goalieList
 ```
 
 
 
-```{r SkaterRecords, echo=FALSE}
+
+
+
+
+```{r SkaterRecords, echo=TRUE}
 skateRec <- function(id){
   skateUrl <- paste0("https://records.nhl.com/site/api", "/franchise-skater-records?cayenneExp=franchiseId")
   getSkate <- GET(skateUrl)
@@ -112,7 +110,7 @@ skateRec <- function(id){
   skateList
   }
 skateRec(417)
-skateList
+
 ```
 
 
@@ -150,27 +148,27 @@ The wrapper function is used to be an easier way to call a previous created func
 nhlfranchise <- function(franchise){
     franchise(id)
 }
-nhlfranchise()
+nhlfranchise(1)
 
 nhlSeason <- function(seasonRecords){
     seasonRecords(id)
 }
-nhlSeason()
+nhlSeason(4)
 
 nhlTeamTot <- function(franTeamTot){
     franTeamTot(id)
 }
-nhlTeamTot()
+nhlTeamTot(1)
 
 nhlFranDetails <- function(FranDetails){
     FranDetails(id)
 }
-nhlFranDetails()
+nhlFranDetails(1)
 
 nhlSkater <- function(skateRec){
     skateRec(id)
 }
-nhlSkater()
+nhlSkater(1)
 ```
 
 ## Creating Variables
@@ -243,7 +241,7 @@ ActiveTeams + geom_bar() + labs(x="Active/Inactive Teams", title = "Active teams
 
 The histogram below utilizes the "fill" option in the geom_bar() to color code the goals made in one game grouped by position.
 
-```{r}
+```{r SkatePlot, echo=TRUE}
 SkateData<- ggplot(data = skateList1, aes(as.factor(positionCode)))
 SkateData + geom_bar(aes(fill = as.factor(mostGoalsOneGame)), position = "dodge") + labs(x = "Position Code", title = "Histogram of the most goals made in one game by position")+ scale_fill_discrete(name = "Goals Made in One Game")
 ```
@@ -265,14 +263,12 @@ WinsScatter + geom_point() + labs(x = "Total Wins", y = "Goals Scored for", titl
 
 The plot below demonstrate the geom_boxplot() function. It uses the variable "positionCode" for the x and the "mostPointsOneSeason" variable for the y-axis. The boxplots gives a five number summary analysis for the the data. 
 
-```{r}
+```{r Active Plot, echo=TRUE}
 ActivePos <- ggplot(skateList1, aes(as.factor(positionCode)))
 ActivePos + geom_boxplot(aes(positionCode, mostPointsOneSeason)) + labs(x = "PositionCode", y = "Most Points in One Seaon")
 ```
 
 
-```{r}
-rmarkdown::render(input.Rmd, github_document)
-```
+
 
 
