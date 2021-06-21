@@ -2,7 +2,7 @@
 title: "Project 1"
 author: "Dionte Watie"
 date: "6/17/2021"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -146,20 +146,31 @@ Modifier <- function(x){
 
 The wrapper function is used to be an easier way to call a previous created functions so that the user has an easier time using the functions. 
 
-```{r}
-nhlEndpoints <- function(franchise, franTeamTot, seasonRecords, skateRec, FranDetails, Modifier){
-    if(franchise){ franchise(id)}
-  
-    if(franTeamTot){franTeamTot(id)}
-  
-    if(seasonRecords){seasonRecords(id)}
-    
-    if(skateRec){seasonRecords(id)}
-  
-    if(FranchisDetails){FranchisDetails(id)}
-  
+```{r WrapperFunct, echo=TRUE}
+nhlfranchise <- function(franchise){
+    franchise(id)
 }
-nhlEndpoints(5)
+nhlfranchise()
+
+nhlSeason <- function(seasonRecords){
+    seasonRecords(id)
+}
+nhlSeason()
+
+nhlTeamTot <- function(franTeamTot){
+    franTeamTot(id)
+}
+nhlTeamTot()
+
+nhlFranDetails <- function(FranDetails){
+    FranDetails(id)
+}
+nhlFranDetails()
+
+nhlSkater <- function(skateRec){
+    skateRec(id)
+}
+nhlSkater()
 ```
 
 ## Creating Variables
@@ -260,5 +271,8 @@ ActivePos + geom_boxplot(aes(positionCode, mostPointsOneSeason)) + labs(x = "Pos
 ```
 
 
+```{r}
+rmarkdown::render(input.Rmd, github_document)
+```
 
 
